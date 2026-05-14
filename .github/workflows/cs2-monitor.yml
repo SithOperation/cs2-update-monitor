@@ -26,7 +26,8 @@ jobs:
 
       - name: Run CS2 monitor
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL_1: ${{ secrets.DISCORD_WEBHOOK_URL_1 }}
+          DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
         run: python cs2-monitor.py
 
       - name: Save state
