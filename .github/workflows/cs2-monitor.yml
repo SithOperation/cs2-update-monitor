@@ -1,0 +1,43 @@
+name: CS2 Update Monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run CS2 monitor
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python cs2-monitor.py
+
+      - name: Save state
+        run: |
+          git config user.name "cs2-monitor"
+          git config user.email "cs2-monitor@users.noreply.github.com"
+
+          if [ -f cs2_state.json ]; then
+            git add cs2_state.json
+            git commit -m "Update CS2 monitor state" || echo "No changes to commit"
+            git push
+          else
+            echo "No cs2_state.json found."
+          fi
