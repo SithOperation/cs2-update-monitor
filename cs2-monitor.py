@@ -7,9 +7,12 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 STATE_FILE = Path("cs2_state.json")
-DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
-
 DISCORD_LIMIT = 1900
+
+DISCORD_WEBHOOK_URLS = [
+    os.environ["DISCORD_WEBHOOK_URL_1"],
+    os.environ["DISCORD_WEBHOOK_URL_2"],
+]
 
 FEEDS = [
     "https://store.steampowered.com/feeds/news/app/730/?cc=US&l=english",
@@ -47,24 +50,25 @@ def save_state(state):
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
 def send_discord_alert(message):
-    response = requests.post(
-        DISCORD_WEBHOOK_URL,
-        json={"content": message[:DISCORD_LIMIT]},
-        timeout=20
-    )
-
-    if response.status_code == 429:
-        retry_after = response.json().get("retry_after", 5)
-        time.sleep(retry_after + 1)
-
+    for webhook_url in DISCORD_WEBHOOK_URLS:
         response = requests.post(
-            DISCORD_WEBHOOK_URL,
+            webhook_url,
             json={"content": message[:DISCORD_LIMIT]},
             timeout=20
         )
 
-    response.raise_for_status()
-    time.sleep(2)
+        if response.status_code == 429:
+            retry_after = response.json().get("retry_after", 5)
+            time.sleep(retry_after + 1)
+
+            response = requests.post(
+                webhook_url,
+                json={"content": message[:DISCORD_LIMIT]},
+                timeout=20
+            )
+
+        response.raise_for_status()
+        time.sleep(2)
 
 def matches_keywords(title, summary):
     text = f"{title} {summary}".lower()
